@@ -2,12 +2,12 @@ package server
 
 import (
 	//	"github.com/alfrye/authorize/internal/handlers/authorizeservice"
-	"github.com/alfrye/authorize/internal/handlers/authorizeservice"
+	"github.com/alfrye/authorize/internal/handlers/api"
 	"github.com/alfrye/authorize/internal/router"
 )
 
 // AuthorizeServiceRoutes defines the routes
-func (s *Server) AuthorizeServiceRoutes() []*router.API {
+func (s *Server) AuthorizeServiceRoutes(handler api.AuthHandler) []*router.API {
 	return []*router.API{
 		{
 			ServiceName: "/authorize",
@@ -19,7 +19,7 @@ func (s *Server) AuthorizeServiceRoutes() []*router.API {
 						{
 							Method:  "POST",
 							Path:    "",
-							Handler: authorizeservice.RegisterUsers(),
+							Handler: handler.RegisterUsers(),
 						},
 					},
 				},
@@ -35,7 +35,7 @@ func (s *Server) AuthorizeServiceRoutes() []*router.API {
 						{
 							Method:  "GET",
 							Path:    "",
-							Handler: authorizeservice.Serve(),
+							Handler: handler.Serve(),
 						},
 					},
 				},
@@ -52,7 +52,7 @@ func (s *Server) AuthorizeServiceRoutes() []*router.API {
 						{
 							Method:  "POST",
 							Path:    "",
-							Handler: authorizeservice.Serve(),
+							Handler: handler.Serve(),
 						},
 					},
 				},
@@ -68,7 +68,7 @@ func (s *Server) AuthorizeServiceRoutes() []*router.API {
 						{
 							Method:  "POST",
 							Path:    "",
-							Handler: authorizeservice.Login(),
+							Handler: handler.Login(),
 						},
 					},
 				},

@@ -10,7 +10,13 @@
             "request": "launch",
             "mode": "auto",
             "program": "/Users/alanfrye/code/goprojects/authorize/cmd/authorize/main.go",
-            "env": {},
+            "env": {
+                "DB_URL": "mongo",
+                "MONGO_URL": "mongodb://localhost:27017",
+                "MONGO_DB": "security",
+                "DB_TIMEOUT": "30",
+                "AUTH_PROVIDER": "local"
+            },
             "args": []
         }
     ]

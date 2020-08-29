@@ -9,16 +9,19 @@ import (
 
 // Users in the system
 type Users struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
+
+// CustomClaims defines the claims for the jtw token
 type CustomClaims struct {
 	Username string `json:"Username"`
 	jwt.StandardClaims
 }
 
-func (u Users) GenereateToken() string {
+// GenerateToken generates he jwt token for the user
+func (u Users) GenerateToken() string {
 	//	key := []byte("alan")
 	claims := CustomClaims{
 		Username: u.Name,

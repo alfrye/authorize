@@ -1,20 +1,41 @@
-package authorizeservice
+package api
 
 import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
+	"github.com/alfrye/authorize/internal/authorize"
 	"github.com/alfrye/authorize/internal/models"
-	"github.com/alfrye/authorize/internal/persistence"
+
+	//persistence "github.com/alfrye/authorize/internal/persistence/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Login handles the requst to log a user in
-func Login() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+type (
+	AuthHandler interface {
+		Login() http.HandlerFunc
+		RegisterUsers() http.HandlerFunc
+		Serve() http.HandlerFunc
+	}
 
+	Handler struct {
+		authService authorize.AuthService
+	}
+)
+
+func NewAuthHandler(authService authorize.AuthService) AuthHandler {
+	return &Handler{
+		authService: authService,
+	}
+}
+
+// Login handles the requst to log a user in
+func (h *Handler) Login() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		//TODO: Call the
 		if r.Method == http.MethodPost {
 			// Get data from post form
 			//check for valid password
@@ -30,16 +51,20 @@ func Login() http.HandlerFunc {
 			// Get user from persistence
 			// persist data for users
 			//?? what db mongo, key/value, cockroach, sqllite rdbms
-			db := persistence.Database{
-				Conn: &persistence.Connection{
-					Name: "myconnection",
-					Host: "localhost",
-					Port: "27017",
-				},
+			retrieveUser, err := h.authService.AuthRepository.GetUser(user.Name)
+			if err != nil {
+				log.Print("Could not retrieve users")
 			}
+			// db := persistence.Database{
+			// 	Conn: &persistence.Connection{
+			// 		Name: "myconnection",
+			// 		Host: "localhost",
+			// 		Port: "27017",
+			// 	},
+			// }
 
-			db.Connect()
-			retrieveUser := db.GetUser(user.Name)
+			// 	db.Connect()
+			// retrieveUser := db.GetUser(user.Name)
 
 			result := bcrypt.CompareHashAndPassword([]byte(retrieveUser.Password), []byte(user.Password))
 
@@ -47,12 +72,12 @@ func Login() http.HandlerFunc {
 				fmt.Println(result)
 				// pass word not valid
 				w.WriteHeader(http.StatusUnauthorized)
-				//	http.Redirect(w, r, "localhost/authorize/v1/user", http.StatusPermanentRedirect)
+				//				http.Redirect(w, r, "localhost/authorize/v1/user", http.StatusPermanentRedirect)
 
 			}
 
 			// call generate token
-			token := retrieveUser.GenereateToken()
+			token := retrieveUser.GenerateToken()
 
 			// Generate Cookie
 
@@ -66,11 +91,10 @@ func Login() http.HandlerFunc {
 		}
 
 	}
-
 }
 
 // RegisterUsers handles the requst to register a user
-func RegisterUsers() http.HandlerFunc {
+func (h *Handler) RegisterUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method == http.MethodPost {
@@ -90,16 +114,9 @@ func RegisterUsers() http.HandlerFunc {
 
 			// persist data for users
 			//?? what db mongo, key/value, cockroach, sqllite rdbms
-			db := persistence.Database{
-				Conn: &persistence.Connection{
-					Name: "myconnection",
-					Host: "localhost",
-					Port: "27017",
-				},
-			}
 
-			dbClient := db.Connect()
-			dbClient.CreateUser(data)
+			h.authService.AuthRepository.CreateUser(data)
+			w.WriteHeader(http.StatusCreated)
 			_, err = w.Write([]byte("User has been registered"))
 			if err != nil {
 				fmt.Println(err)
@@ -108,11 +125,10 @@ func RegisterUsers() http.HandlerFunc {
 		}
 
 	}
-
 }
 
-// RegisterUsers handles the requst to register a user
-func Serve() http.HandlerFunc {
+// Serve handles the requst to register a user
+func (h *Handler) Serve() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var tpl *template.Template
