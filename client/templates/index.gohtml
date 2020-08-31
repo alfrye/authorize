@@ -13,7 +13,15 @@
       <br/>
       <input type="submit" name="Register" >
     </form>
-
+    <br/>
+<div id='userlist'>
+<p> Currently Registered user </p>
+<ul>
+   {{range .}}
+    <li> {{.Name}}  </li>
+   {{end}}
+</ul>
+</div>
 </body>
 
 </html>

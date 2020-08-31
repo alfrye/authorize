@@ -131,10 +131,14 @@ func (h *Handler) RegisterUsers() http.HandlerFunc {
 func (h *Handler) Serve() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		retrieveUsers, err := h.authService.AuthRepository.GetAllUsers()
+		if err != nil {
+			log.Print("Could not retrieve users")
+		}
 		var tpl *template.Template
 
 		tpl = template.Must(template.ParseGlob("../../client/templates/*"))
 
-		tpl.ExecuteTemplate(w, "index.gohtml", nil)
+		tpl.ExecuteTemplate(w, "index.gohtml", retrieveUsers)
 	}
 }

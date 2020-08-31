@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch",
+            "name": "Launch with Mongo",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -15,7 +15,29 @@
                 "MONGO_URL": "mongodb://localhost:27017",
                 "MONGO_DB": "security",
                 "DB_TIMEOUT": "30",
-                "AUTH_PROVIDER": "local"
+                "AUTH_PROVIDER": "local",
+                
+            },
+            "args": []
+        },
+
+        {
+            "name": "Launch with MySql",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "/Users/alanfrye/code/goprojects/authorize/cmd/authorize/main.go",
+            "env": {
+                "DB_URL": "mysql",
+                "DB_TIMEOUT": "30",
+                "AUTH_PROVIDER": "local",
+                "MYSQL_HOST": "localhost",
+                "MYSQL_PORT": "3306",
+                "MYSQL_DB": "security_store",
+                "MYSQL_USER" : "root",
+                "MYSQL_PASS": "root"
+
+                
             },
             "args": []
         }

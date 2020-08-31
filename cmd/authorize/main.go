@@ -9,7 +9,8 @@ import (
 	"github.com/alfrye/authorize/internal/authorization/provider"
 	"github.com/alfrye/authorize/internal/authorize"
 	api "github.com/alfrye/authorize/internal/handlers/api"
-	persistence "github.com/alfrye/authorize/internal/persistence/mongo"
+	mg "github.com/alfrye/authorize/internal/persistence/mongo"
+	mysql "github.com/alfrye/authorize/internal/persistence/mysql"
 	"github.com/alfrye/authorize/internal/server"
 )
 
@@ -37,11 +38,31 @@ func choseRepository() authorize.AuthorizeRepository {
 		if err != nil {
 
 		}
-		repo, err := persistence.NewMongoRepository(mongoURL, mongoDB, mongoTimeout)
+		repo, err := mg.NewMongoRepository(mongoURL, mongoDB, mongoTimeout)
 		if err != nil {
 			log.Fatal("Could not create mongo repo")
 		}
 		return repo
+	case "mysql":
+		//Setup information for mysql database
+		//	mySQLURL := os.Getenv("MYSQL_URL")
+		mySQLHost := os.Getenv("MYSQL_HOST")
+		mySQLPort := os.Getenv("MYSQL_PORT")
+		mySQLDatabase := os.Getenv("MYSQL_DB")
+		mySQLUser := os.Getenv("MYSQL_USER")
+		mySQLPassword := os.Getenv("MYSQL_PASS")
+
+		mySQLTimeout, err := strconv.Atoi(os.Getenv("DB_TIMEOUT"))
+		if err != nil {
+
+		}
+
+		repo, err := mysql.NewMySQLRepository("mysql", mySQLHost, mySQLPort, mySQLDatabase, mySQLUser, mySQLPassword, mySQLTimeout)
+		if err != nil {
+			log.Fatal("Could not create mongo repo")
+		}
+		return repo
+
 	}
 
 	return nil
