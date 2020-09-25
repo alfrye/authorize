@@ -77,6 +77,12 @@ func choseAuthProvider() authorize.AuthProvider {
 			log.Fatal("Can not create authentication provider")
 		}
 		return authProvider
+	case "google":
+		authProvider, err := provider.NewGoogleAuthProvider()
+		if err != nil {
+			log.Fatal("Can not create authentication provider")
+		}
+		return authProvider
 	}
 
 	return nil

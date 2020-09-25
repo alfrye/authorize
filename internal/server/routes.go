@@ -9,6 +9,7 @@ import (
 // AuthorizeServiceRoutes defines the routes
 func (s *Server) AuthorizeServiceRoutes(handler api.AuthHandler) []*router.API {
 	return []*router.API{
+
 		{
 			ServiceName: "/authorize",
 			Version:     "/v1",
@@ -26,15 +27,15 @@ func (s *Server) AuthorizeServiceRoutes(handler api.AuthHandler) []*router.API {
 			},
 		},
 		{
-			ServiceName: "/authorize",
-			Version:     "/v1",
+			ServiceName: "",
+			Version:     "",
 			Subroutes: []*router.SubRoute{
 				{
-					Path: "/user",
+					Path: "",
 					Endpoints: []*router.Endpoint{
 						{
 							Method:  "GET",
-							Path:    "",
+							Path:    "/",
 							Handler: handler.Serve(),
 						},
 					},
@@ -69,6 +70,23 @@ func (s *Server) AuthorizeServiceRoutes(handler api.AuthHandler) []*router.API {
 							Method:  "POST",
 							Path:    "",
 							Handler: handler.Login(),
+						},
+					},
+				},
+			},
+		},
+
+		{
+			ServiceName: "/authorize",
+			Version:     "/v1",
+			Subroutes: []*router.SubRoute{
+				{
+					Path: "/oauth",
+					Endpoints: []*router.Endpoint{
+						{
+							Method:  "GET",
+							Path:    "/google",
+							Handler: handler.GoogleReceive(),
 						},
 					},
 				},

@@ -30,7 +30,7 @@
             "env": {
                 "DB_URL": "mysql",
                 "DB_TIMEOUT": "30",
-                "AUTH_PROVIDER": "local",
+                "AUTH_PROVIDER": "google",
                 "MYSQL_HOST": "localhost",
                 "MYSQL_PORT": "3306",
                 "MYSQL_DB": "security_store",
