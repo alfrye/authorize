@@ -38,12 +38,16 @@ func New() *Router {
 
 	r := mux.NewRouter()
 
+	//Handle static content
+	// NOTE: the serve path starts at from teh main,go path
+	r.PathPrefix("/asset").Handler(http.StripPrefix("/asset", http.FileServer(http.Dir("../../client/templates/css"))))
+
 	router := &Router{
 		Engine: r,
 	}
 	return router
 }
-
+// LoadRoutes loads the api routes into the specified router
 func (r *Router) LoadRoutes(api []*API) {
 
 	r.API = api

@@ -1,0 +1,27 @@
+<html>
+<head>
+  <!-- <link rel="stylesheet" type="text/css" href="/asset/auth.css"/> -->
+</head>
+<body>
+   
+    <div class="login_div" >
+        <label>Logged in as {{.Name}}  {{.Email }}</label> 
+        
+    </div>
+    <br/>
+<div id='userlist'>
+
+<ul>
+     {{range .}}
+          
+            <li>{{.Name}} </li>
+            <li> {{.Email}} </li>
+
+          
+   
+     {{end}}  
+        </ul>
+</div>
+</body>
+
+</html>

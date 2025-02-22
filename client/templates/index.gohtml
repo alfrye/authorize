@@ -1,18 +1,33 @@
 <html>
+<head>
+  <link rel="stylesheet" type="text/css" href="/asset/auth.css"/>
+</head>
 <body>
-    <p>Register Username</p>
-    <form method="POST" action="/authorize/v1/register">
-    <label>Username</label>
-      <input type="text"  name="user">
-      <br/>
-      <label>password</label>
-      <input type="text" name="password" >
-      <br/>
-      <label>email</label>
-      <input type="text"  name="email">
-      <br/>
-      <input type="submit" name="Register" >
-    </form>
+
+
+    
+    <div class="login_div" >
+      {{if ne .  "local"}}
+          <form action="/authorize/v1/login" method="POST">
+        <input type="Submit" value="Login with Google">
+        </form>
+      {{else}}
+        <form method="POST" action="/authorize/v1/register" class="login_form">
+        <div class=form_elements>
+          <h2>Registration</h2>
+          <hr>
+          <input type="text" id="user" name="user" placeholder="Username" class="rounded-input">
+        
+          <input type="text" name="password" placeholder="Password" class="rounded-input" >
+          <br/>
+          <input class="rounded-input" type="text"  name="email" placeholder="email">
+          <br/>
+          <input class="rounded-input" type="submit" name="Register" >
+        </div>
+        </form>
+        {{end}}
+    </div>
+    <br/>
 
 </body>
 

@@ -9,6 +9,7 @@ type (
 	// AuthorizeRepository defines repository
 	AuthorizeRepository interface {
 		GetUser(username string) (models.Users, error)
+		GetAllUsers() ([]models.Users, error)
 		CreateUser(models.Users) error
 	}
 )

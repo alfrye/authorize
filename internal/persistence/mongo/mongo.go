@@ -100,3 +100,30 @@ func (r *mongoRepository) GetUser(userName string) (models.Users, error) {
 	}
 	return user, nil
 }
+
+func (r *mongoRepository) GetAllUsers() ([]models.Users, error) {
+	var users []models.Users
+	collection := r.client.Database(r.database).Collection("users")
+	filter := bson.D{{}}
+	cur, err := collection.Find(context.Background(), filter, options.Find()) //.Decode(&users)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+
+	}
+
+	for cur.Next(context.TODO()) {
+		//Create a value into which the single document can be decoded
+		var user models.Users
+		err := cur.Decode(&user)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// results =append(results, elem)
+		users = append(users, user)
+	}
+
+	return users, nil
+
+}

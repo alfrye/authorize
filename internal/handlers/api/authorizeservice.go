@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/alfrye/authorize/internal/authorize"
 	"github.com/alfrye/authorize/internal/models"
-
-	//persistence "github.com/alfrye/authorize/internal/persistence/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,6 +18,7 @@ type (
 		Login() http.HandlerFunc
 		RegisterUsers() http.HandlerFunc
 		Serve() http.HandlerFunc
+		GoogleReceive() http.HandlerFunc
 	}
 
 	Handler struct {
@@ -32,11 +32,18 @@ func NewAuthHandler(authService authorize.AuthService) AuthHandler {
 	}
 }
 
+var tpl *template.Template
+
+func init() {
+	tpl = template.Must(template.ParseGlob("../../client/templates/*.gohtml"))
+}
+
 // Login handles the requst to log a user in
 func (h *Handler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//TODO: Call the
 		if r.Method == http.MethodPost {
+
 			// Get data from post form
 			//check for valid password
 			// Generate token
@@ -45,52 +52,107 @@ func (h *Handler) Login() http.HandlerFunc {
 			//var t interface{}
 			json.NewDecoder(r.Body).Decode(&user)
 
-			// userName := r.FormValue("user")
-			// password := r.FormValue("password")
+			//TODO: refactor the login all for each provider
+			url, err := h.authService.AuthProvider.Login("")
+			if err != nil {
+				log.Print("Could not Oauth providers redirect url users")
+				return
+			}
+
+			// Redirects to OAuth provider login
+			http.Redirect(w, r, url, http.StatusSeeOther)
 
 			// Get user from persistence
 			// persist data for users
-			//?? what db mongo, key/value, cockroach, sqllite rdbms
-			retrieveUser, err := h.authService.AuthRepository.GetUser(user.Name)
-			if err != nil {
-				log.Print("Could not retrieve users")
-			}
-			// db := persistence.Database{
-			// 	Conn: &persistence.Connection{
-			// 		Name: "myconnection",
-			// 		Host: "localhost",
-			// 		Port: "27017",
-			// 	},
+			//?? what db mongo, key/value, cockroach, rdbms
+
+			// retrieveUser, err := h.authService.AuthRepository.GetUser(user.Name)
+			// if err != nil {
+			// 	log.Print("Could not retrieve users")
 			// }
 
-			// 	db.Connect()
-			// retrieveUser := db.GetUser(user.Name)
+			// result := bcrypt.CompareHashAndPassword([]byte(retrieveUser.Password), []byte(user.Password))
 
-			result := bcrypt.CompareHashAndPassword([]byte(retrieveUser.Password), []byte(user.Password))
+			// if result != nil {
+			// 	fmt.Println(result)
+			// 	// pass word not valid
+			// 	w.WriteHeader(http.StatusUnauthorized)
+			// 	//				http.Redirect(w, r, "localhost/authorize/v1/user", http.StatusPermanentRedirect)
 
-			if result != nil {
-				fmt.Println(result)
-				// pass word not valid
-				w.WriteHeader(http.StatusUnauthorized)
-				//				http.Redirect(w, r, "localhost/authorize/v1/user", http.StatusPermanentRedirect)
-
-			}
+			// }
 
 			// call generate token
-			token := retrieveUser.GenerateToken()
+			//			token := retrieveUser.GenerateToken()
 
 			// Generate Cookie
 
-			cookie := http.Cookie{Name: "auth", Value: token}
+			// 	cookie := http.Cookie{Name: "auth", Value: token}
 
-			http.SetCookie(w, &cookie)
-			fmt.Printf("UserName:%s", result)
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Login Succeeded"))
+			// 	http.SetCookie(w, &cookie)
+			// 	fmt.Printf("UserName:%s", result)
+			// 	w.WriteHeader(http.StatusOK)
+			// 	w.Write([]byte("Login Succeeded"))
 
 		}
 
 	}
+}
+
+// GoogleReceive is the oauth callback function
+func (h *Handler) GoogleReceive() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := r.FormValue("state")
+
+		if state == "" {
+			return
+		}
+		// got code from oauth server
+		code := r.FormValue("code")
+
+		if code == "" {
+			return
+		}
+
+		clt, err := h.authService.AuthProvider.GetOAuthClient(code, r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		resp, err := clt.Get("https://www.googleapis.com/oauth2/v3/userinfo")
+		if err != nil {
+			log.Printf("Error getting info from Google:%v\n", err.Error())
+
+		}
+
+		defer resp.Body.Close()
+		data, _ := ioutil.ReadAll(resp.Body)
+
+		fmt.Printf("Data from Provider:%v\n", string(data))
+		user, err := h.authService.AuthProvider.ProcessUserData(data)
+
+		if err != nil {
+			log.Println(err)
+		}
+		// Check to see if the user is already registered
+		existingUsers, err := h.authService.AuthRepository.GetUser(user.Name)
+		if err != nil {
+			log.Println("Error retreiving users from database")
+		}
+		if (models.Users{}) == existingUsers {
+			h.authService.RegisterUser(user)
+		}
+
+		// createSession
+		h.authService.CreateSession(existingUsers, w)
+
+		//    http.Redirect(w, r, "/", http.StatusSeeOther)
+
+		fmt.Printf("Sending user data to users page:%v", existingUsers)
+		tpl.ExecuteTemplate(w, "users.gohtml", existingUsers)
+
+		fmt.Printf("code from provider:%v\n", code)
+
+	}
+
 }
 
 // RegisterUsers handles the requst to register a user
@@ -110,7 +172,7 @@ func (h *Handler) RegisterUsers() http.HandlerFunc {
 				Password: string(hashedPass),
 				Email:    r.FormValue("email"),
 			}
-			fmt.Printf("UserName:%s", data)
+			fmt.Printf("UserName:%v", data)
 
 			// persist data for users
 			//?? what db mongo, key/value, cockroach, sqllite rdbms
@@ -130,11 +192,39 @@ func (h *Handler) RegisterUsers() http.HandlerFunc {
 // Serve handles the requst to register a user
 func (h *Handler) Serve() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Check for cookie
+		c, err := r.Cookie("auth")
+		//	var tpl *template.Template
+		//	tpl = template.Must(template.ParseGlob("../../client/templates/index.gohtml"))
+		if err != nil {
+			log.Println("Cookie does not exist:%v", err)
+			c = &http.Cookie{
+				Name:  "sessionID",
+				Value: "",
+			}
 
-		var tpl *template.Template
+		}
 
-		tpl = template.Must(template.ParseGlob("../../client/templates/*"))
+		if c.Value == "" {
+			pname := h.authService.AuthProvider.GetName()
+			tpl.ExecuteTemplate(w, "index.gohtml", pname)
+			return
+		}
 
-		tpl.ExecuteTemplate(w, "index.gohtml", nil)
+		username, err := h.authService.ParseToken(c.Value)
+		if err != nil {
+			log.Println("parse token in index route: %v", err)
+		}
+
+		currentUser, err := h.authService.AuthRepository.GetUser(username)
+		//_, err = h.authService.AuthRepository.GetUser(username)
+		if err != nil {
+			log.Print("Could not retrieve users")
+		}
+		//	var tpl *template.Template
+
+		//	tpl = template.Must(template.ParseGlob("../../client/templates/index.gohtml"))
+
+		tpl.ExecuteTemplate(w, "users.gohtml", currentUser)
 	}
 }
