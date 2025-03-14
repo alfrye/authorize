@@ -1,0 +1,32 @@
+{
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+
+    "name": "Go Dev Environment",
+    "mounts": [
+        {
+        "source": "${env:HOME}/.kube", 
+        "target": "/home/vscode/.kube",
+        "type": "bind"
+        }
+    ],
+    "containerUser": "vscode",
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    },
+    // "postCreateCommand": "sed -i 's/127.0.0.1/host.docker.internal/' /home/vscode/.kube/config",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-kubernetes-tools.vscode-kubernetes-tools",
+                "tilt-dev.Tiltfile",
+                "redhat.vscode-yaml",
+                "kennylong.kubernetes-yaml-formatter",
+                "golang.go"
+            ]
+        }
+    }
+
+
+}
