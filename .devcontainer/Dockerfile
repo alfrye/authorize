@@ -3,9 +3,8 @@ FROM ubuntu:22.04
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
-    
+
+
 RUN apt update && apt install -y \
 apt-utils \
 build-essential \
@@ -13,12 +12,18 @@ git \
 jq \
 net-tools \
 openssl \
-vim \
+vim \  
 wget \
 curl \
 sudo \
 && rm -rf /var/lib/apt/lists/*
 
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+#RUN groupadd golang --gid 999 $USERNAME
 
 # Install Go 
 ARG GOLANG_VERSION="1.24.0"
@@ -54,3 +59,6 @@ RUN curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/in
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
     && sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 USER vscode
+
+# RUN echo "golang:x:999:vscode" >> /etc/group
+# RUN chgrp -R 999 /go && chmod -R g+rwx /go

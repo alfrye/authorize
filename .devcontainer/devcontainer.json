@@ -1,9 +1,8 @@
 {
+    "name": "Go Dev Environment",
     "build": {
         "dockerfile": "Dockerfile"
     },
-
-    "name": "Go Dev Environment",
     "mounts": [
         {
         "source": "${env:HOME}/.kube", 
@@ -11,7 +10,8 @@
         "type": "bind"
         }
     ],
-    "containerUser": "vscode",
+    "remoteUser": "vscode",
+   // "containerUser": "vscode",
     "containerEnv": {
         "SHELL": "/bin/bash"
     },

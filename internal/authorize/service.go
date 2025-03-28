@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/alfrye/authorize/internal/models"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type (
@@ -41,7 +41,7 @@ func NewAuthService(repo AuthorizeRepository, provider AuthProvider) AuthService
 
 }
 
-//CreateSession creates a session and sends back a cookie
+// CreateSession creates a session and sends back a cookie
 func (auth AuthService) CreateSession(u models.Users, w http.ResponseWriter) error {
 
 	// Creates a session for the user
@@ -95,7 +95,7 @@ func (auth AuthService) RegisterUser(u models.Users) error {
 	// Creates a session for the user
 }
 
-//ParseToken parse the jwt token
+// ParseToken parse the jwt token
 func (auth AuthService) ParseToken(t string) (string, error) {
 
 	token, err := jwt.ParseWithClaims(t, &CustomClaims{}, func(t *jwt.Token) (interface{}, error) {
