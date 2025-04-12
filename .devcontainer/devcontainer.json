@@ -23,7 +23,8 @@
                 "tilt-dev.Tiltfile",
                 "redhat.vscode-yaml",
                 "kennylong.kubernetes-yaml-formatter",
-                "golang.go"
+                "golang.go",
+                "usernamehw.errorlens"
             ]
         }
     }

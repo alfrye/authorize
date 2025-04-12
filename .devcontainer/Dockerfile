@@ -23,7 +23,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-#RUN groupadd golang --gid 999 $USERNAME
+
 
 # Install Go 
 ARG GOLANG_VERSION="1.24.0"
@@ -41,7 +41,10 @@ ARG GO_FUMPT="v0.7.0"
 ARG GOIMPORTS_VERSION="v0.30.0"
 ENV GOPATH="/go"
 ENV PATH="${PATH}:/usr/local/go/bin:/go/bin"
+ENV GOCACHE=/home/vscode/.cache/go-build
 
+RUN mkdir -p $GOPATH $GOCACHE
+RUN chown -R vscode:vscode $GOPATH $GOCACHE
 
 RUN go install golang.org/x/tools/gopls@${GO_PLS_VERSION} \
  && go install github.com/go-delve/delve/cmd/dlv@${GO_DELV_DLV_VERSION} \
@@ -60,5 +63,3 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
     && sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 USER vscode
 
-# RUN echo "golang:x:999:vscode" >> /etc/group
-# RUN chgrp -R 999 /go && chmod -R g+rwx /go
