@@ -1,33 +1,39 @@
 {
-    "name": "Go Dev Environment",
-    "build": {
+    "name": "go-react-dev",
+	"build": {
         "dockerfile": "Dockerfile"
     },
-    "mounts": [
+	"mounts": [
         {
         "source": "${env:HOME}/.kube", 
         "target": "/home/vscode/.kube",
         "type": "bind"
-        }
+        },
     ],
-    "remoteUser": "vscode",
-   // "containerUser": "vscode",
-    "containerEnv": {
+	"remoteUser": "vscode",
+	"containerEnv": {
         "SHELL": "/bin/bash"
     },
-    // "postCreateCommand": "sed -i 's/127.0.0.1/host.docker.internal/' /home/vscode/.kube/config",
-    "customizations": {
-        "vscode": {
-            "extensions": [
+	"forwardPorts": [
+		3000
+	],
+  "features": {
+     "ghcr.io/duduribeiro/devcontainer-features/neovim:1" : {
+     },
+	},
+	"customizations": 
+		"vscode": {
+			"extensions": [
                 "ms-kubernetes-tools.vscode-kubernetes-tools",
                 "tilt-dev.Tiltfile",
                 "redhat.vscode-yaml",
                 "kennylong.kubernetes-yaml-formatter",
                 "golang.go",
-                "usernamehw.errorlens"
+                "usernamehw.errorlens",
+                "dzannotti.vscode-babel-coloring",
+                "zxh404.vscode-proto3",
+                "42Crunch.vscode-openapi"
             ]
-        }
-    }
-
-
+		}
+	}
 }
