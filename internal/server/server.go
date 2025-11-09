@@ -16,10 +16,10 @@ type Server struct {
 }
 
 // New instaniates an new server instance
-func New(port string) *Server {
+func New(port int) *Server {
 	srv := &Server{
 		Engine: &http.Server{
-			Addr:         fmt.Sprintf("0.0.0.0:%s", port),
+			Addr:         fmt.Sprintf("0.0.0.0:%d", port),
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,
 			IdleTimeout:  time.Second * 15,
@@ -33,7 +33,7 @@ func New(port string) *Server {
 // Listen Starts the Web Server
 func (s *Server) Listen() {
 
-	fmt.Println("Starting Authorize API Server")
+	fmt.Printf("Starting Authorize API Server on port %s", s.Engine.Addr)
 	log.Fatal(s.Engine.ListenAndServe())
 
 }

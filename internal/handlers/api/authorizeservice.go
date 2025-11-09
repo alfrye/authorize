@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 
@@ -35,7 +35,7 @@ func NewAuthHandler(authService authorize.AuthService) AuthHandler {
 var tpl *template.Template
 
 func init() {
-	tpl = template.Must(template.ParseGlob("../../client/templates/*.gohtml"))
+	tpl = template.Must(template.ParseGlob("client/templates/*.gohtml"))
 }
 
 // Login handles the requst to log a user in
@@ -124,7 +124,7 @@ func (h *Handler) GoogleReceive() http.HandlerFunc {
 		}
 
 		defer resp.Body.Close()
-		data, _ := ioutil.ReadAll(resp.Body)
+		data, _ := io.ReadAll(resp.Body)
 
 		fmt.Printf("Data from Provider:%v\n", string(data))
 		user, err := h.authService.AuthProvider.ProcessUserData(data)
@@ -197,7 +197,7 @@ func (h *Handler) Serve() http.HandlerFunc {
 		//	var tpl *template.Template
 		//	tpl = template.Must(template.ParseGlob("../../client/templates/index.gohtml"))
 		if err != nil {
-			log.Println("Cookie does not exist:%v", err)
+			log.Printf("Cookie does not exist:%v", err)
 			c = &http.Cookie{
 				Name:  "sessionID",
 				Value: "",
@@ -213,7 +213,7 @@ func (h *Handler) Serve() http.HandlerFunc {
 
 		username, err := h.authService.ParseToken(c.Value)
 		if err != nil {
-			log.Println("parse token in index route: %v", err)
+			log.Printf("parse token in index route: %v", err)
 		}
 
 		currentUser, err := h.authService.AuthRepository.GetUser(username)
