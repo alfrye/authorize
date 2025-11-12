@@ -55,6 +55,11 @@ func (s *Server) AuthorizeServiceRoutes(handler api.AuthHandler) []*router.API {
 							Path:    "",
 							Handler: handler.Serve(),
 						},
+						{
+							Method: "GET",
+							Path: "",
+							Handler: handler.GetUser(),
+						},
 					},
 				},
 			},

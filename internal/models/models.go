@@ -2,6 +2,8 @@ package models
 
 // Users in the system
 type Users struct {
+	FirstName string `json:"firstname"`
+	LastName string `json:"lastname"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`

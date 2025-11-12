@@ -3,37 +3,43 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"time"
 
 	"github.com/alfrye/authorize/internal/authorize"
 	"github.com/alfrye/authorize/internal/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type (
 	postgresRepository struct {
-		client   *pgx.Conn
+		client   *pgxpool.Pool
 		database string
 		timeout  time.Duration
 	}
 )
 
-func newPostgresClient(postgresURL string ) (*pgx.Conn, error) {
-
-	dbClient, err := pgx.Connect(context.Background(), "databaseURL")
+func newPostgresClient(postgresURL string ) (*pgxpool.Pool, error) {
+	ctx := context.Background()
+  pool, err := pgxpool.New(ctx, postgresURL)
+//	dbClient, err := pgx.Connect(context.Background(), "databaseURL")
 	if err != nil {
-		fmt.Println("Can not open database")
+		log.Println("Can not open database")
 		return nil, err
-
+	}
+// verify the connection
+  if err := pool.Ping(ctx); err != nil {
+		log.Printf("unable to ping database: %v", err)
+		return nil, err
 	}
 
-	return dbClient, nil
+	return pool, nil
 }
 
 func NewPostgresRepository(dbHost, dbPort, postgresDB, postgresUser, postgresPassword string, timeout int) (authorize.AuthorizeRepository, error) {
 	dbAddr := net.JoinHostPort(dbHost, dbPort)
-	dbName := "authorize"
+	dbName := "postgres"
 	postgresURL := "postgresql://" + postgresUser + ":" + postgresPassword + "@" + dbAddr + "/" + dbName
 	// postgresConfig := postgres.Config{
 	// 	User:   postgresUser,
@@ -42,10 +48,10 @@ func NewPostgresRepository(dbHost, dbPort, postgresDB, postgresUser, postgresPas
 	// 	DBName: postgresDB,
 	// 	Addr:   dbAddr,
 	// }
-
-	dbClient, err := newPostgresClient(postgresURL)
+  log.Printf("Connecting to database:%s",postgresURL)
+ 	dbClient, err := newPostgresClient(postgresURL)
 	if err != nil {
-		fmt.Printf("Error Creating client: %s", err)
+		log.Printf("Error Creating client: %s", err)
 		return nil, err
 	}
 	repo := &postgresRepository{
@@ -58,7 +64,26 @@ func NewPostgresRepository(dbHost, dbPort, postgresDB, postgresUser, postgresPas
 }
 
 func (r *postgresRepository) CreateUser(user models.Users) error {
+//var user models.Users
+sql := "Select * from users;"
+ err := r.client.QueryRow(context.Background(), sql)
+	if err != nil {
+		 log.Printf("Error querying the users table:%v", err)
+	 }
 
+	//  defer rows.Close()
+	//
+	//  for rows.Next() {
+	// 	 err := rows.Scan(
+	// 		 &user.FirstName,
+	// 		 &user.LastName,
+	// 		 &user.Email)
+	//
+	// if err != nil {
+	// 	 log.Printf("Error Scanning rows: %w", err)
+	//  }
+	//
+	
 	// insUser, err := r.client.Query("INSERT into users(name, password,email) Values(?,?,?)")
 	// if err != nil {
 	// 	fmt.Printf("Error creating sql: %v", err)
@@ -73,34 +98,35 @@ func (r *postgresRepository) CreateUser(user models.Users) error {
 	//
 	fmt.Println("Calling Creat User")
 
-	return nil
+	return nil  
+
 }
 
 func (r *postgresRepository) GetUser(username string) (models.Users, error) {
-	var user models.Users
-	// selUser, err := r.client.Query("SELECT name,password,email from users Where name=?", username)
-	// if err != nil {
-	// 	fmt.Printf("Error creating sql: %v", err)
-	// 	return user, err
-	// }
-	// for selUser.Next() {
-	// 	var userName, userPassword, userEmail string
-	//
-	// 	err := selUser.Scan(&userName, &userPassword, &userEmail)
-	// 	if err != nil {
-	// 		fmt.Printf("Error scanning results:%v", err)
-	// 		return models.Users{}, err
-	// 	}
-	// 	user.Name = username
-	// 	user.Password = userPassword
-	// 	user.Email = userEmail
-	//
-	// }
-  user = models.Users{
-		Name: "Test",
-		Password: "test",
-		Email: "test@acme,com",
+	 var user models.Users
+	selUser, err := r.client.Query(context.Background(),"SELECT firstname,lastname,email from users Where firstnam=$1", username)
+	if err != nil {
+		fmt.Printf("Error creating sql: %v", err)
+		return user, err
 	}
+	for selUser.Next() {
+		var userFirstName,userLastName, userEmail string
+
+		err := selUser.Scan(&userFirstName, &userLastName, &userEmail)
+		if err != nil {
+			fmt.Printf("Error scanning results:%v", err)
+			return models.Users{}, err
+		}
+		user.FirstName = userFirstName
+		user.LastName = userLastName
+		user.Email = userEmail
+
+	}
+	//  user = models.Users{
+	// 	Name: "Test",
+	// 	Password: "test",
+	// 	Email: "test@acme,com",
+	// }
 	return user, nil
 }
 
