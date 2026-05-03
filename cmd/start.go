@@ -3,19 +3,19 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/alfrye/authorize/internal/authorize"
-	"github.com/alfrye/authorize/internal/server"
-	"github.com/spf13/cobra"
-
 	"github.com/alfrye/authorize/internal/authorization/provider"
-
-	api "github.com/alfrye/authorize/internal/handlers/api"
-	mg "github.com/alfrye/authorize/internal/persistence/mongo"
-	mysql "github.com/alfrye/authorize/internal/persistence/mysql"
-	postgres "github.com/alfrye/authorize/internal/persistence/postgres"
+	"github.com/alfrye/authorize/internal/endpoints"
+	mongopkg "github.com/alfrye/authorize/internal/persistence/mongo"
+	mysqlpkg "github.com/alfrye/authorize/internal/persistence/mysql"
+	postgrespkg "github.com/alfrye/authorize/internal/persistence/postgres"
+	"github.com/alfrye/authorize/internal/service"
+	"github.com/alfrye/authorize/internal/transport"
+	"github.com/spf13/cobra"
 )
 
 type config struct {
@@ -95,17 +95,33 @@ func init() {
 }
 
 func setup(c config) error {
-	// Connect to database and start the server
-	fmt.Println("Connecting to database and start server")
-	s := server.New(c.port)
-
+	// Connect to database and start the server with go-kit
+	fmt.Println("Connecting to database and starting go-kit server")
+	
+	// Setup repository and auth provider
 	repo := choseRepository(c)
 	authProvider := choseAuthProvider()
+	
+	// Create the original auth service
 	authService := authorize.NewAuthService(repo, authProvider)
-	nhandler := api.NewAuthHandler(authService)
-	s.PopulateRoutes(s.AuthorizeServiceRoutes(nhandler))
-	s.Listen()
-	return nil
+	
+	// Create go-kit service wrapper
+	goKitService := service.NewGoKitService(authService)
+	
+	// Create endpoints
+	endpoints := endpoints.NewEndpoints(goKitService)
+	
+	// Create HTTP handler
+	httpHandler := transport.NewHTTPHandler(endpoints)
+	
+	// Start HTTP server
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", c.port),
+		Handler: httpHandler,
+	}
+	
+	fmt.Printf("Starting go-kit Authorize API Server on port %d\n", c.port)
+	return server.ListenAndServe()
 }
 
 func choseRepository(c config) authorize.AuthorizeRepository {
@@ -119,7 +135,7 @@ func choseRepository(c config) authorize.AuthorizeRepository {
 		if err != nil {
 
 		}
-		repo, err := mg.NewMongoRepository(mongoURL, mongoDB, mongoTimeout)
+		repo, err := mongopkg.NewMongoRepository(mongoURL, mongoDB, mongoTimeout)
 		if err != nil {
 			log.Fatal("Could not create mongo repo")
 		}
@@ -138,7 +154,7 @@ func choseRepository(c config) authorize.AuthorizeRepository {
 
 		}
 
-		repo, err := mysql.NewMySQLRepository("mysql", mySQLHost, mySQLPort, mySQLDatabase, mySQLUser, mySQLPassword, mySQLTimeout)
+		repo, err := mysqlpkg.NewMySQLRepository("mysql", mySQLHost, mySQLPort, mySQLDatabase, mySQLUser, mySQLPassword, mySQLTimeout)
 		if err != nil {
 			log.Fatal("Could not create mongo repo")
 		}
@@ -146,7 +162,7 @@ func choseRepository(c config) authorize.AuthorizeRepository {
 	case "postgres":
 		//Setup information for postgres database
 		log.Printf("Using Database %s", c.db_vendor)
-		repo, err := postgres.NewPostgresRepository(c.db_host, c.db_port, c.db_name, c.db_user, c.db_password, c.db_timeout)
+		repo, err := postgrespkg.NewPostgresRepository(c.db_host, c.db_port, c.db_name, c.db_user, c.db_password, c.db_timeout)
 		if err != nil {
 			log.Fatal("Could not create postgres repo")
 		}

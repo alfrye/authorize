@@ -9,7 +9,7 @@ import (
 
 	"github.com/alfrye/authorize/internal/authorize"
 	"github.com/alfrye/authorize/internal/models"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type (
@@ -22,7 +22,7 @@ type (
 
 func newPostgresClient(postgresURL string ) (*pgxpool.Pool, error) {
 	ctx := context.Background()
-  pool, err := pgxpool.New(ctx, postgresURL)
+  pool, err := pgxpool.Connect(ctx, postgresURL)
 //	dbClient, err := pgx.Connect(context.Background(), "databaseURL")
 	if err != nil {
 		log.Println("Can not open database")

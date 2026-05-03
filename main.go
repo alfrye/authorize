@@ -3,33 +3,12 @@ package main
 import (
 	"fmt"
 
-	// "log"
-	// "os"
-	// "strconv"
-
 	"github.com/alfrye/authorize/cmd"
-	// "github.com/alfrye/authorize/internal/authorization/provider"
-	// "github.com/alfrye/authorize/internal/authorize"
-	// api "github.com/alfrye/authorize/internal/handlers/api"
-	// mg "github.com/alfrye/authorize/internal/persistence/mongo"
-	// mysql "github.com/alfrye/authorize/internal/persistence/mysql"
-	// "github.com/alfrye/authorize/internal/server"
 )
 
 func main() {
-	fmt.Println("Starting main programe")
-	// cmd, err :=	cmd.NewRootCommand()
+	fmt.Println("Starting Authorize API with go-kit")
 	cmd.Execute()
-
-	// fmt.Println("starting point for Authorize")
-	// s := server.New("9010")
-	// repo := choseRepository()
-	// authProvider := choseAuthProvider()
-	// authService := authorize.NewAuthService(repo, authProvider)
-	// nhandler := api.NewAuthHandler(authService)
-	// s.PopulateRoutes(s.AuthorizeServiceRoutes(nhandler))
-	// s.Listen()
-
 }
 
 // func choseRepository() authorize.AuthorizeRepository {
