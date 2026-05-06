@@ -1,36 +1,51 @@
 package models
 
-// Users in the system
+import "time"
+
 type Users struct {
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	AvatarURL string `json:"avatarurl"`
-	UserID    string `json:"userid"`
+	ID        string    `json:"id"`
+	FirstName string    `json:"firstname"`
+	LastName  string    `json:"lastname"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	AvatarURL string    `json:"avatarurl"`
+	UserID    string    `json:"userid"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// CustomClaims defines the claims for the jtw token
-// type CustomClaims struct {
-// 	Username string `json:"Username"`
-// 	jwt.StandardClaims
-// }
+type Client struct {
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	SecretHash   string   `json:"-"`
+	RedirectURIs []string `json:"redirect_uris"`
+	Scopes       []string `json:"scopes"`
+	GrantTypes   []string `json:"grant_types"`
+}
 
-// GenerateToken generates he jwt token for the user
-// func (u Users) GenerateToken() string {
-// 	//	key := []byte("alan")
-// 	claims := CustomClaims{
-// 		Username: u.Name,
-// 		StandardClaims: jwt.StandardClaims{
-// 			ExpiresAt: time.Now().Add(time.Hour * time.Duration(1)).Unix(),
-// 			IssuedAt:  time.Now().Unix(),
-// 		},
-// 	}
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+type Session struct {
+	ID          string    `json:"id"`
+	UserID      string    `json:"user_id"`
+	ClientID    string    `json:"client_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	MFAVerified bool      `json:"mfa_verified"`
+}
 
-// 	tokenString, err := token.SignedString([]byte("secret"))
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
+type AuthCode struct {
+	Code                string    `json:"-"`
+	ClientID            string    `json:"client_id"`
+	UserID              string    `json:"user_id"`
+	RedirectURI         string    `json:"redirect_uri"`
+	CodeChallenge       string    `json:"-"`
+	CodeChallengeMethod string    `json:"code_challenge_method"`
+	Scopes              string    `json:"scopes"`
+	Nonce               string    `json:"nonce,omitempty"`
+	ExpiresAt           time.Time `json:"expires_at"`
+}
 
-// 	return tokenString
-// }
+type RefreshToken struct {
+	Token     string    `json:"-"`
+	SessionID string    `json:"session_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+}

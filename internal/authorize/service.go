@@ -1,6 +1,9 @@
 package authorize
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log"
@@ -8,83 +11,89 @@ import (
 	"time"
 
 	"github.com/alfrye/authorize/internal/models"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type (
-
-	// AuthService defines the provider for authentication
 	AuthService struct {
 		AuthRepository AuthorizeRepository
 		AuthProvider   AuthProvider
-		//OAuthProvider  OAuthProvider
+		signingKey     *ecdsa.PrivateKey
+		verifyingKey   *ecdsa.PublicKey
+		keyID          string
+		issuer         string
 	}
 
-	// CustomClaims defines the claims for the jtw token
 	CustomClaims struct {
 		Username string `json:"Username"`
-		jwt.StandardClaims
+		jwt.RegisteredClaims
 	}
 )
 
-var (
-	session = map[string]string{}
-	key     = []byte("secret")
-)
+var session = map[string]string{}
 
-// NewAuthService Instaniates an Auth service
 func NewAuthService(repo AuthorizeRepository, provider AuthProvider) AuthService {
+	signingKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatalf("Failed to generate ECDSA key: %v", err)
+	}
 	return AuthService{
 		AuthRepository: repo,
 		AuthProvider:   provider,
+		signingKey:     signingKey,
+		verifyingKey:   &signingKey.PublicKey,
+		keyID:          uuid.New().String(),
+		issuer:         "https://localhost:9010",
 	}
-
 }
 
-// CreateSession creates a session and sends back a cookie
-func (auth AuthService) CreateSession(u models.Users, w http.ResponseWriter) error {
+func (auth *AuthService) SetIssuer(issuer string) {
+	auth.issuer = issuer
+}
 
-	// Creates a session for the user
-	// call generate token
+func (auth *AuthService) GetSigningKey() *ecdsa.PrivateKey {
+	return auth.signingKey
+}
+
+func (auth *AuthService) GetVerifyingKey() *ecdsa.PublicKey {
+	return auth.verifyingKey
+}
+
+func (auth *AuthService) GetKeyID() string {
+	return auth.keyID
+}
+
+func (auth *AuthService) CreateSession(u models.Users, w http.ResponseWriter) error {
 	token := auth.GenerateToken(u)
-
-	// Generate Cookie
-
-	cookie := http.Cookie{Name: "auth", Value: token, Path: "/"}
-
+	cookie := http.Cookie{Name: "auth", Value: token, Path: "/", HttpOnly: true, Secure: true}
 	http.SetCookie(w, &cookie)
-	// 	fmt.Printf("UserName:%s", result)
-	// 	w.WriteHeader(http.StatusOK)
-	// 	w.Write([]byte("Login Succeeded"))
 	session[u.Name] = token
 	return nil
 }
 
-// GenerateToken generates he jwt token for the user
-func (auth AuthService) GenerateToken(u models.Users) string {
-	//	key := []byte("alan")
+func (auth *AuthService) GenerateToken(u models.Users) string {
+	now := time.Now()
 	claims := CustomClaims{
 		Username: u.Name,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * time.Duration(1)).Unix(),
-			IssuedAt:  time.Now().Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour * time.Duration(1))),
+			IssuedAt:  jwt.NewNumericDate(now),
+			Issuer:    auth.issuer,
+			Subject:   u.ID,
+			ID:        uuid.New().String(),
 		},
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString([]byte("secret"))
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token.Header["kid"] = auth.keyID
+	tokenString, err := token.SignedString(auth.signingKey)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 	return tokenString
 }
 
 func (auth AuthService) RegisterUser(u models.Users) error {
-
-	// persist data for users
-	//?? what db mongo, key/value, cockroach, sqllite rdbms
-
 	err := auth.AuthRepository.CreateUser(u)
 	if err != nil {
 		log.Println("Unable to register user in database")
@@ -92,19 +101,15 @@ func (auth AuthService) RegisterUser(u models.Users) error {
 	}
 	log.Println("Registered new user.......")
 	return nil
-	// Creates a session for the user
 }
 
-// ParseToken parse the jwt token
 func (auth AuthService) ParseToken(t string) (string, error) {
-
 	token, err := jwt.ParseWithClaims(t, &CustomClaims{}, func(t *jwt.Token) (interface{}, error) {
-		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("different algorothm used")
+		if _, ok := t.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
-
-		return key, nil
-	})
+		return auth.verifyingKey, nil
+	}, jwt.WithIssuer(auth.issuer))
 
 	if err != nil {
 		return "", errors.New("Could not parse token with claims")
@@ -114,5 +119,9 @@ func (auth AuthService) ParseToken(t string) (string, error) {
 		return "", errors.New("Token is not valid")
 	}
 
-	return token.Claims.(*CustomClaims).Username, nil
+	if claims, ok := token.Claims.(*CustomClaims); ok {
+		return claims.Username, nil
+	}
+
+	return "", errors.New("Invalid token claims")
 }

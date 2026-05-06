@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/alfrye/authorize/internal/router"
 )
 
-// Server represents a server instance
 type Server struct {
 	Engine *http.Server
 	Router *router.Router
 }
 
-// New instaniates an new server instance
 func New(port string) *Server {
 	srv := &Server{
 		Engine: &http.Server{
@@ -30,7 +30,6 @@ func New(port string) *Server {
 	return srv
 }
 
-// Listen Starts the Web Server
 func (s *Server) Listen() {
 
 	fmt.Println("Starting Authorize API Server")
@@ -42,4 +41,41 @@ func (s *Server) PopulateRoutes(routes []*router.API) {
 	s.Router.LoadRoutes(routes)
 	s.Engine.Handler = s.Router.Engine
 
+}
+
+func (s *Server) AttachOIDCRoutes(oidcRouter *mux.Router) {
+	oidcRouter.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		s.Router.Engine.PathPrefix(route.GetName()).Handler(oidcRouter)
+		return nil
+	})
+
+	muxRouter := mux.NewRouter()
+	muxRouter.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		oidcRouter.ServeHTTP(w, r)
+	}))
+
+	s.Engine.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isOIDCPath(r.URL.Path) {
+			oidcRouter.ServeHTTP(w, r)
+		} else {
+			s.Router.Engine.ServeHTTP(w, r)
+		}
+	})
+}
+
+func isOIDCPath(path string) bool {
+	oidcPaths := []string{
+		"/.well-known/openid-configuration",
+		"/.well-known/jwks.json",
+		"/authorize",
+		"/token",
+		"/introspect",
+		"/userinfo",
+	}
+	for _, p := range oidcPaths {
+		if path == p {
+			return true
+		}
+	}
+	return false
 }

@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -126,4 +127,48 @@ func (r *mongoRepository) GetAllUsers() ([]models.Users, error) {
 
 	return users, nil
 
+}
+
+func (r *mongoRepository) GetClient(clientID string) (models.Client, error) {
+	return models.Client{}, errors.New("not implemented")
+}
+
+func (r *mongoRepository) CreateClient(client models.Client) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) SaveAuthCode(code models.AuthCode) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) GetAuthCode(code string) (models.AuthCode, error) {
+	return models.AuthCode{}, errors.New("not implemented")
+}
+
+func (r *mongoRepository) DeleteAuthCode(code string) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) CreateSession(s models.Session) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) GetSession(sessionID string) (models.Session, error) {
+	return models.Session{}, errors.New("not implemented")
+}
+
+func (r *mongoRepository) DeleteSession(sessionID string) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) SaveRefreshToken(rt models.RefreshToken) error {
+	return errors.New("not implemented")
+}
+
+func (r *mongoRepository) GetRefreshToken(token string) (models.RefreshToken, error) {
+	return models.RefreshToken{}, errors.New("not implemented")
+}
+
+func (r *mongoRepository) DeleteRefreshToken(token string) error {
+	return errors.New("not implemented")
 }

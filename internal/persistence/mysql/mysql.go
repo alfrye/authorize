@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -122,4 +123,48 @@ func (r *mysqlRepository) GetAllUsers() ([]models.Users, error) {
 
 	return users, nil
 
+}
+
+func (r *mysqlRepository) GetClient(clientID string) (models.Client, error) {
+	return models.Client{}, errors.New("not implemented")
+}
+
+func (r *mysqlRepository) CreateClient(client models.Client) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) SaveAuthCode(code models.AuthCode) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) GetAuthCode(code string) (models.AuthCode, error) {
+	return models.AuthCode{}, errors.New("not implemented")
+}
+
+func (r *mysqlRepository) DeleteAuthCode(code string) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) CreateSession(s models.Session) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) GetSession(sessionID string) (models.Session, error) {
+	return models.Session{}, errors.New("not implemented")
+}
+
+func (r *mysqlRepository) DeleteSession(sessionID string) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) SaveRefreshToken(rt models.RefreshToken) error {
+	return errors.New("not implemented")
+}
+
+func (r *mysqlRepository) GetRefreshToken(token string) (models.RefreshToken, error) {
+	return models.RefreshToken{}, errors.New("not implemented")
+}
+
+func (r *mysqlRepository) DeleteRefreshToken(token string) error {
+	return errors.New("not implemented")
 }
